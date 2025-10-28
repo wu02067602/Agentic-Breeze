@@ -252,8 +252,19 @@ class LLMConnector:
             temperature (Optional[float]): 取樣溫度；可不填由伺服器預設。
             system_prompt (Optional[str]): 系統提示，可用來規範助手行為。
 
-        Yields:
-            串流 chunk 物件，包含逐步生成的內容。
+        Returns:
+            Generator: 串流 chunk 生成器，每個 chunk 包含增量內容。
+
+        Examples:
+            >>> connector = LLMConnector(host_type='ollama')
+            >>> stream = connector.single_query_stream(prompt="今天天氣如何？")
+            >>> for chunk in stream:
+            ...     if chunk.choices[0].delta.content:
+            ...         print(chunk.choices[0].delta.content, end="")
+
+        Raises:
+            ValueError: 當 `prompt` 為空或參數不合法。
+            requests.RequestException: 當請求或回應發生錯誤。
         """
         if not prompt or not isinstance(prompt, str):
             raise ValueError("prompt 不可為空，且需為字串。")
@@ -292,8 +303,20 @@ class LLMConnector:
             max_tokens (Optional[int]): 限制生成的最大 token 數量；可不填由伺服器預設。
             temperature (Optional[float]): 取樣溫度；可不填由伺服器預設。
 
-        Yields:
-            串流 chunk 物件，包含逐步生成的內容。
+        Returns:
+            Generator: 串流 chunk 生成器，每個 chunk 包含增量內容。
+
+        Examples:
+            >>> connector = LLMConnector(host_type='ollama')
+            >>> messages = [{"role": "user", "content": "今天天氣如何？"}]
+            >>> stream = connector.chat_with_history_stream(messages=messages)
+            >>> for chunk in stream:
+            ...     if chunk.choices[0].delta.content:
+            ...         print(chunk.choices[0].delta.content, end="")
+
+        Raises:
+            ValueError: 當 `messages` 為空或結構不合法。
+            requests.RequestException: 當請求或回應發生錯誤。
         """
         if not messages or not isinstance(messages, list):
             raise ValueError("messages 不可為空，且需為列表。")
