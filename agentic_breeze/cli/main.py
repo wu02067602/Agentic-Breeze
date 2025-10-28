@@ -18,7 +18,29 @@ from agentic_breeze.registry.tool_registry import ToolRegistry
 
 
 def create_orchestrator():
-    """Create and configure the Agentic Breeze orchestrator"""
+    """建立並配置 Agentic Breeze orchestrator。
+    
+    根據環境變數初始化所有必要的組件並組裝成 Orchestrator 實例。
+    
+    Args:
+        無參數，但會讀取環境變數：
+        - HOST_TYPE: 主機類型，預設 'ollama'
+        - TIMEOUT: 逾時秒數，預設 300
+        - MAX_TOKENS: 最大 token 數，預設 1000
+        - TEMPERATURE: 溫度參數，預設 0.5
+    
+    Returns:
+        Orchestrator: 配置完成的 Orchestrator 實例
+    
+    Examples:
+        >>> orchestrator = create_orchestrator()
+        >>> isinstance(orchestrator, Orchestrator)
+        True
+    
+    Raises:
+        ImportError: 當無法導入所需模組時
+        ValueError: 當環境變數值無效時
+    """
     llm_connector = LLMConnector(
         host_type=os.getenv("HOST_TYPE", "ollama"),
         timeout=int(os.getenv("TIMEOUT", "300")),
@@ -57,7 +79,26 @@ def create_orchestrator():
 
 
 def run_web_interface():
-    """Launch the Gradio web interface"""
+    """啟動 Gradio 網頁介面。
+    
+    建立並啟動一個交互式的網頁聊天介面，支援串流回應。
+    
+    Args:
+        無參數
+    
+    Returns:
+        None: 會持續運行直到使用者關閉
+    
+    Examples:
+        >>> # 在終端執行
+        >>> run_web_interface()
+        === 啟動 Gradio 介面 ===
+        Running on local URL: http://127.0.0.1:7860
+    
+    Raises:
+        ImportError: 當 gradio 套件未安裝時
+        RuntimeError: 當網頁伺服器啟動失敗時
+    """
     try:
         import gradio as gr
         from dotenv import load_dotenv
@@ -112,7 +153,30 @@ def run_web_interface():
 
 
 def run_chat():
-    """Run interactive chat mode"""
+    """執行交互式聊天模式。
+    
+    在終端中啟動交互式聊天介面，支援多輪對話與串流回應。
+    
+    Args:
+        無參數
+    
+    Returns:
+        None: 會持續運行直到使用者輸入 'exit', 'quit' 或 Ctrl+C
+    
+    Examples:
+        >>> # 在終端執行
+        >>> run_chat()
+        === Agentic Breeze 智慧助理 CLI ===
+        輸入 'exit' 或 'quit' 結束對話
+        ----------------------------------------
+        
+        你: 今天天氣如何？
+        Agentic Breeze: 今天天氣晴朗，氣溫25度。
+    
+    Raises:
+        ImportError: 當缺少所需依賴套件時
+        KeyboardInterrupt: 當使用者按下 Ctrl+C 時（會被捕捉並正常退出）
+    """
     try:
         from dotenv import load_dotenv
         load_dotenv()
@@ -169,7 +233,28 @@ def run_chat():
 
 
 def main():
-    """Main CLI entry point"""
+    """主要的 CLI 入口點。
+    
+    解析命令列參數並執行對應的功能：
+    - web: 啟動網頁介面
+    - chat: 啟動終端聊天模式
+    - 無參數: 顯示幫助訊息
+    
+    Args:
+        無參數，但會讀取 sys.argv
+    
+    Returns:
+        None
+    
+    Examples:
+        >>> # 在終端執行
+        >>> # python -m agentic_breeze.cli.main chat
+        >>> # python -m agentic_breeze.cli.main web
+        >>> # python -m agentic_breeze.cli.main --version
+    
+    Raises:
+        SystemExit: 當命令列參數錯誤或執行失敗時
+    """
     parser = argparse.ArgumentParser(
         description="Agentic Breeze - 智慧助理框架",
         formatter_class=argparse.RawDescriptionHelpFormatter

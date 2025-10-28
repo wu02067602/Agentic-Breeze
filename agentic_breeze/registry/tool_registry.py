@@ -87,6 +87,22 @@ class ToolRegistry:
     def __init__(self) -> None:
         """
         初始化工具註冊表。
+        
+        建立空的工具註冊表並註冊所有預設工具（SQLite、天氣、維基百科等）。
+        
+        Args:
+            無參數
+        
+        Returns:
+            None
+        
+        Examples:
+            >>> registry = ToolRegistry()
+            >>> len(registry.get_llm_tool_schemas()) > 0
+            True
+        
+        Raises:
+            RuntimeError: 當預設工具註冊失敗時
         """
         self._registry: Dict[str, Dict[str, Any]] = {}
         self._register_default_tools() # 呼叫註冊預設工具
@@ -94,7 +110,29 @@ class ToolRegistry:
 
     def _register_default_tools(self) -> None:
         """
-        註冊預設工具，例如 SQLiteSchemaTool。
+        註冊預設工具，包含 SQLite、天氣、維基百科等工具。
+        
+        此方法會自動註冊系統內建的所有預設工具：
+        - SQLite 相關工具（定義表、查詢、獲取表資訊）
+        - 中央氣象署天氣預報工具
+        - 維基百科搜尋工具
+        
+        Args:
+            無參數
+        
+        Returns:
+            None
+        
+        Examples:
+            >>> registry = ToolRegistry()
+            >>> # _register_default_tools 會在 __init__ 中自動調用
+            >>> tools = registry.get_llm_tool_schemas()
+            >>> any('sqlite' in tool['function']['name'] for tool in tools)
+            True
+        
+        Raises:
+            ImportError: 當無法匯入所需的工具類別時
+            ValueError: 當工具註冊參數不正確時
         """
         # -------------------- 註冊 SQLiteSchemaTool ---------------------
         sqlite_tool_instance = SQLiteSchemaTool(db_path="sample_users.db")
@@ -230,16 +268,38 @@ class ToolRegistry:
         於登錄表中新增一個可供 LLM 呼叫與系統執行的工具定義。工具名稱
         應具唯一性；若同名將覆蓋原有設定。
 
-        參數：
-            name：工具名稱（唯一）。
-            description：工具用途與行為的說明，供 LLM 判斷何時調用。
-            parameters：JSON Schema 物件，對應 OpenAI function calling 的
-                `parameters` 欄位，用於描述參數型態與必填欄位。
-            handler：實際執行函式，呼叫簽名為 `handler(**kwargs)`，需與
-                `parameters` 定義相容。
+        Args:
+            name (str): 工具名稱（唯一），不可為空
+            description (str): 工具用途與行為的說明，供 LLM 判斷何時調用
+            parameters (Dict[str, Any]): JSON Schema 物件，對應 OpenAI function calling 的
+                parameters 欄位，用於描述參數型態與必填欄位
+            handler (Callable[..., Any]): 實際執行函式，呼叫簽名為 handler(**kwargs)，
+                需與 parameters 定義相容
+        
+        Returns:
+            None
 
-        例外：
-            ValueError：當 name 為空或 handler 不可呼叫時拋出。
+        Examples:
+            >>> registry = ToolRegistry()
+            >>> registry.register_tool(
+            ...     name="add",
+            ...     description="加總兩個整數並回傳字串結果",
+            ...     parameters={
+            ...         "type": "object",
+            ...         "properties": {
+            ...             "a": {"type": "integer"},
+            ...             "b": {"type": "integer"}
+            ...         },
+            ...         "required": ["a", "b"]
+            ...     },
+            ...     handler=lambda a, b: str(a + b)
+            ... )
+            >>> result = registry.execute_tool("add", a=1, b=2)
+            >>> result
+            '3'
+
+        Raises:
+            ValueError: 當 name 為空或 handler 不可呼叫時
         """
         if not name or not isinstance(name, str):
             raise ValueError("tool name 不可為空，且需為字串。")
@@ -262,10 +322,24 @@ class ToolRegistry:
         取得工具 schema 列表。
 
         回傳符合 OpenAI function calling 規格之工具定義，用以作為 LLM 的
-        `tools` 參數。每一個元素皆為 `{"type": "function", "function": {...}}`。
+        tools 參數。每一個元素皆為 {"type": "function", "function": {...}}。
 
-        傳回：
-            List[Dict[str, Any]]：可用工具的 schema 清單。
+        Args:
+            無參數
+
+        Returns:
+            List[Dict[str, Any]]: 可用工具的 schema 清單，每個元素符合 OpenAI tools 格式
+        
+        Examples:
+            >>> registry = ToolRegistry()
+            >>> schemas = registry.get_llm_tool_schemas()
+            >>> isinstance(schemas, list)
+            True
+            >>> all(schema.get("type") == "function" for schema in schemas)
+            True
+
+        Raises:
+            RuntimeError: 當獲取 schema 時發生錯誤
         """
         return [entry["schema"] for entry in self._registry.values()]
 
@@ -281,20 +355,38 @@ class ToolRegistry:
         成功且回傳值為非字串，將嘗試以 JSON 進行序列化；失敗時回傳具固定
         前綴之錯誤訊息，或於嚴格模式下拋出例外。
 
-        參數：
-            tool_name：工具名稱。
-            raise_on_error：為 True 時，遇到錯誤即拋出例外；為 False 時回傳
-                具固定前綴之錯誤字串（預設 False，以維持相容）。
-            **kwargs：傳遞給工具處理函式的參數，應符合工具 schema 定義。
+        Args:
+            tool_name (str): 工具名稱，必須是已註冊的工具
+            raise_on_error (bool): 為 True 時遇到錯誤即拋出例外，為 False 時回傳
+                具固定前綴之錯誤字串，預設 False
+            **kwargs (Any): 傳遞給工具處理函式的參數，應符合工具 schema 定義
 
-        傳回：
-            str：工具回傳內容之字串表示。
+        Returns:
+            str: 工具回傳內容之字串表示，若為非字串則會轉為 JSON 或 str
 
-        注意事項：
-            - 本實作著重於最小可用，未內建 JSON Schema 驗證。如需嚴格驗證，
-              可於未來引入 `jsonschema` 或 Pydantic。
-            - 保留最後一道通用例外攔截，目的在於提供穩定回傳格式與防止流程
-              中斷；必要時可透過 raise_on_error 開啟嚴格模式。
+        Examples:
+            >>> registry = ToolRegistry()
+            >>> registry.register_tool(
+            ...     name="echo",
+            ...     description="回傳輸入文字",
+            ...     parameters={"type": "object", "properties": {"text": {"type": "string"}}},
+            ...     handler=lambda text: text
+            ... )
+            >>> registry.execute_tool("echo", text="Hello")
+            'Hello'
+            >>> result = registry.execute_tool("non_existent_tool")
+            >>> "[ToolError]" in result
+            True
+
+        Raises:
+            KeyError: 當 raise_on_error=True 且工具未註冊時
+            TypeError: 當 raise_on_error=True 且參數不符時
+            ValueError: 當 raise_on_error=True 且參數驗證失敗時
+
+        Note:
+            - 本實作著重於最小可用，未內建 JSON Schema 驗證
+            - 保留最後一道通用例外攔截，提供穩定回傳格式與防止流程中斷
+            - 必要時可透過 raise_on_error 開啟嚴格模式
         """
         entry = self._registry.get(tool_name)
         if not entry:
