@@ -19,7 +19,20 @@ class ToolExecutor:
         初始化工具執行器。
         
         Args:
-            tool_registry: 工具註冊表，用於執行具體工具
+            tool_registry (ToolRegistry): 工具註冊表，用於執行具體工具
+        
+        Returns:
+            None
+        
+        Examples:
+            >>> from agentic_breeze.registry.tool_registry import ToolRegistry
+            >>> registry = ToolRegistry()
+            >>> executor = ToolExecutor(registry)
+            >>> isinstance(executor, ToolExecutor)
+            True
+        
+        Raises:
+            TypeError: 當 tool_registry 不是 ToolRegistry 實例時
         """
         if not isinstance(tool_registry, ToolRegistry):
             raise TypeError("tool_registry must be an instance of ToolRegistry")
@@ -31,13 +44,21 @@ class ToolExecutor:
         執行計畫中的所有工具調用。
         
         Args:
-            execution_plan: 要執行的計畫
+            execution_plan (ExecutionPlan): 要執行的計畫物件
             
         Returns:
             List[str]: 所有工具執行的結果列表
+        
+        Examples:
+            >>> from agentic_breeze.agents.orchestrator_core.modle.execution_plan import ExecutionPlan, PlanItem
+            >>> plan = ExecutionPlan(plan_items=[PlanItem(tool_name="test", arguments={})], description="test")
+            >>> executor = ToolExecutor(tool_registry)
+            >>> results = executor.execute_plan(plan)
+            >>> isinstance(results, list)
+            True
             
         Raises:
-            RuntimeError: 如果執行過程出現嚴重錯誤
+            RuntimeError: 當執行過程出現無法處理的嚴重錯誤時
         """
         if not execution_plan.plan_items:
             return []
@@ -63,11 +84,21 @@ class ToolExecutor:
         執行單一工具調用並更新推理步驟。
         
         Args:
-            plan_item: 單一工具調用的計畫項目
-            index: 工具在計畫中的索引，用於日誌記錄
+            plan_item (PlanItem): 單一工具調用的計畫項目
+            index (int): 工具在計畫中的索引，用於日誌記錄
             
         Returns:
             str: 工具執行的結果字串，或錯誤訊息
+        
+        Examples:
+            >>> from agentic_breeze.agents.orchestrator_core.modle.execution_plan import PlanItem
+            >>> item = PlanItem(tool_name="test_tool", arguments={})
+            >>> result = executor._execute_single_tool(item, 0)
+            >>> isinstance(result, str)
+            True
+        
+        Raises:
+            無特定錯誤（錯誤會轉換為結果字串返回）
         """
         
         tool_name = plan_item.tool_name

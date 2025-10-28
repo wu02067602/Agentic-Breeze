@@ -229,9 +229,3 @@ class APIRequestTool:
                 "response_body": None,
                 "error": f"An error occurred while requesting {e.request.url!r}: {e}"
             }
-        except Exception as e:
-            return {
-                "status_code": None,
-                "response_body": None,
-                "error": f"An unexpected error occurred: {e}"
-            }

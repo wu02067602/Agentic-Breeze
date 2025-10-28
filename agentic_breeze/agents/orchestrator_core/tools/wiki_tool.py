@@ -70,7 +70,7 @@ class WikiTool:
             items = res["response_body"]["query"]["search"]
             titles = [it["title"] for it in items]
             return json.dumps({"status": "success", "titles": titles, "raw": items})
-        except Exception as e:
+        except (KeyError, TypeError, IndexError) as e:
             return json.dumps({"status": "error", "message": f"Unexpected response format: {e}"})
 
     def get_page_info(self, title: str) -> str:
@@ -127,7 +127,7 @@ class WikiTool:
                 return json.dumps({"status": "error", "message": f"Unexpected page structure for: {title}"})
 
             return json.dumps({"status": "success", "page": page})
-        except Exception as e:
+        except (KeyError, TypeError, IndexError) as e:
             return json.dumps({"status": "error", "message": f"Unexpected response format for page info: {e}"})
 
     def get_full_content(self, title: str) -> str:
@@ -192,7 +192,7 @@ class WikiTool:
                 return json.dumps({"status": "error", "message": f"Could not find full content for: {title}"})
 
             return json.dumps({"status": "success", "content": full_content})
-        except Exception as e:
+        except (KeyError, TypeError, IndexError) as e:
             return json.dumps({"status": "error", "message": f"Unexpected response format for full content: {e}"})
 
     def smart_content(self, query: str, limit: int = 2) -> str:

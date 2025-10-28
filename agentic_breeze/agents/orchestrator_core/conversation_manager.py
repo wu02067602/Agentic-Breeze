@@ -18,7 +18,20 @@ class ConversationManager:
         初始化對話管理器。
 
         Args:
-            llm_client: LLM 客戶端，用於問題釐清和元對話的回應生成。
+            llm_client (LLMConnector): LLM 客戶端，用於問題釐清和元對話的回應生成
+        
+        Returns:
+            None
+        
+        Examples:
+            >>> from agentic_breeze.llm.llm_client import LLMConnector
+            >>> llm = LLMConnector()
+            >>> manager = ConversationManager(llm)
+            >>> isinstance(manager, ConversationManager)
+            True
+        
+        Raises:
+            TypeError: 當 llm_client 不是 LLMConnector 實例時
         """
         if not isinstance(llm_client, LLMConnector):
             raise TypeError("llm_client must be an instance of LLMConnector")
@@ -31,6 +44,23 @@ class ConversationManager:
         - 僅保留 role in {user, assistant}
         - 轉字串、去除空白；空內容移除
         - 僅保留最後 max_items 筆
+        
+        Args:
+            history (Optional[List[Dict[str, str]]]): 對話歷史記錄，預設為 None
+            max_items (int): 最多保留的對話數量，預設為 10
+        
+        Returns:
+            List[Dict[str, str]]: 清理後的對話歷史
+        
+        Examples:
+            >>> manager = ConversationManager(llm_client)
+            >>> history = [{"role": "user", "content": "你好"}]
+            >>> cleaned = manager.sanitize_history(history, max_items=5)
+            >>> len(cleaned) <= 5
+            True
+        
+        Raises:
+            無特定錯誤
         """
         history = history or []
         cleaned: List[Dict[str, str]] = []
@@ -61,7 +91,10 @@ class ConversationManager:
             >>> conversation_manager.is_meta_question("你是誰？")
             True
             >>> conversation_manager.is_meta_question("推薦好吃的餐廳")
-            True
+            False
+        
+        Raises:
+            無特定錯誤
         """
         q = (question or "").strip()
         if not q:
@@ -93,6 +126,9 @@ class ConversationManager:
             >>> history = [{"role": "user", "content": "今天天氣如何？"}, {"role": "assistant", "content": "今天天氣晴朗。"}]
             >>> conversation_manager.clarify_question_with_history("那明天呢？", history)
             "明天的天氣如何？"
+        
+        Raises:
+            無特定錯誤
         """
         system_instruction = (
             "請分析使用者的最後問題是否為獨立的新問題，或是延續性問題。"
@@ -122,6 +158,9 @@ class ConversationManager:
             >>> history = [{"role": "user", "content": "你好"}]
             >>> conversation_manager.handle_meta_conversation("你是誰？", history)
             "我是AI助理，很高興為您服務。"
+        
+        Raises:
+            無特定錯誤
         """
         meta_messages: List[Dict[str, str]] = []
         meta_messages.extend(history or [])
@@ -130,7 +169,37 @@ class ConversationManager:
         return final_answer
 
     def get_reasoning_history(self) -> List[Dict[str, str]]:
+        """
+        獲取推理歷史記錄。
+        
+        Returns:
+            List[Dict[str, str]]: 推理歷史記錄的副本
+        
+        Examples:
+            >>> manager = ConversationManager(llm_client)
+            >>> history = manager.get_reasoning_history()
+            >>> isinstance(history, list)
+            True
+        
+        Raises:
+            無特定錯誤
+        """
         return list(self._reasoning_history)
 
     def clear_reasoning_history(self) -> None:
+        """
+        清空推理歷史記錄。
+        
+        Returns:
+            None
+        
+        Examples:
+            >>> manager = ConversationManager(llm_client)
+            >>> manager.clear_reasoning_history()
+            >>> len(manager.get_reasoning_history())
+            0
+        
+        Raises:
+            無特定錯誤
+        """
         self._reasoning_history.clear()

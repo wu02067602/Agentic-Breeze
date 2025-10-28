@@ -27,12 +27,28 @@ class Orchestrator:
         初始化總指揮代理。
         
         Args:
-            prompt_manager: 提示管理器。
-            planning_manager: 規劃管理器。
-            tool_executor: 工具執行器。
-            conversation_manager: 對話管理器。
-            synthesis_generator: 綜合生成器。
-            query_rewriter: 問句重寫器。
+            prompt_manager (PromptManager): 提示管理器
+            planning_manager (PlanningManager): 規劃管理器
+            tool_executor (ToolExecutor): 工具執行器
+            conversation_manager (ConversationManager): 對話管理器
+            synthesis_generator (SynthesisGenerator): 綜合生成器
+            query_rewriter (QueryRewriter): 問句重寫器
+        
+        Returns:
+            None
+        
+        Examples:
+            >>> orchestrator = Orchestrator(
+            ...     prompt_manager=prompt_mgr,
+            ...     planning_manager=plan_mgr,
+            ...     tool_executor=tool_exec,
+            ...     conversation_manager=conv_mgr,
+            ...     synthesis_generator=synth_gen,
+            ...     query_rewriter=query_rw
+            ... )
+        
+        Raises:
+            TypeError: 當任何參數類型不正確時
         """
         # 初始化各個核心組件
         self.prompt_manager = prompt_manager # 提示管理器
@@ -47,19 +63,19 @@ class Orchestrator:
         處理複雜查詢，執行完整的推理循環。
 
         Args:
-            complex_question: 複雜查詢。
+            complex_question (str): 使用者的複雜查詢問題
 
         Returns:
-            回答。
+            str: AI 生成的回答內容
 
         Examples:
-            >>> orchestrator = Orchestrator(prompt_manager, planning_manager, tool_executor, conversation_manager, synthesis_generator)
+            >>> orchestrator = Orchestrator(prompt_manager, planning_manager, tool_executor, conversation_manager, synthesis_generator, query_rewriter)
             >>> orchestrator.aquery("今天天氣如何？")
             "今天天氣晴朗，氣溫攝氏25度。"
 
-        Exceptions:
-            ValueError: 複雜查詢為空。
-            RuntimeError: 推理過程出現錯誤。
+        Raises:
+            ValueError: 當 complex_question 不是字串類型時
+            RuntimeError: 當推理過程出現無法處理的錯誤時
         """
         if not isinstance(complex_question, str):
             raise ValueError("complex_question must be a string")
@@ -84,20 +100,20 @@ class Orchestrator:
         支援多輪對話歷史的查詢入口。
 
         Args:
-            complex_question: str, 複雜查詢。
-            history: Optional[List[Dict[str, str]]], 對話歷史。
+            complex_question (str): 使用者的複雜查詢問題
+            history (Optional[List[Dict[str, str]]]): 對話歷史記錄，預設為 None
 
         Returns:
-            回答。
+            str: AI 生成的回答內容
 
         Examples:
-            >>> orchestrator = Orchestrator(prompt_manager, planning_manager, tool_executor, conversation_manager, synthesis_generator)
+            >>> orchestrator = Orchestrator(prompt_manager, planning_manager, tool_executor, conversation_manager, synthesis_generator, query_rewriter)
             >>> orchestrator.aquery_with_history("今天適合出門嗎？", [{"role": "user", "content": "今天天氣如何？"}, {"role": "assistant", "content": "今天天氣晴朗，氣溫攝氏25度。"}])
             "今天適合出門，氣溫攝氏25度。"
 
-        Exceptions:
-            ValueError: 複雜查詢為空。
-            RuntimeError: 推理過程出現錯誤。
+        Raises:
+            ValueError: 當 complex_question 不是字串類型時
+            RuntimeError: 當推理過程出現無法處理的錯誤時
         """
         if not isinstance(complex_question, str):
             raise ValueError("complex_question must be a string")
@@ -119,28 +135,39 @@ class Orchestrator:
         synthesis = self.synthesis_generator.synthesize_result(complex_question, results, used_tools)
         return synthesis
     
-    def get_reasoning_history(self):
+    def get_reasoning_history(self) -> List[Dict[str, str]]:
         """
         獲取完整的推理歷史記錄。
 
         Returns:
-            推理歷史記錄。
+            List[Dict[str, str]]: 推理歷史記錄列表，每個項目包含 role 和 content
 
         Examples:
-            >>> orchestrator = Orchestrator(prompt_manager, planning_manager, tool_executor, conversation_manager, synthesis_generator)
-            >>> orchestrator.get_reasoning_history()
-            [ReasoningStep(step_type="planning", result="釐清後問題：今天天氣如何？"), ReasoningStep(step_type="tool_execution", result="今天天氣晴朗，氣溫攝氏25度。")]
+            >>> orchestrator = Orchestrator(prompt_manager, planning_manager, tool_executor, conversation_manager, synthesis_generator, query_rewriter)
+            >>> history = orchestrator.get_reasoning_history()
+            >>> isinstance(history, list)
+            True
+        
+        Raises:
+            無特定錯誤
         """
         return self.conversation_manager.get_reasoning_history()
     
     def clear_reasoning_history(self) -> None:
         """
         清空推理歷史記錄。
+        
+        Returns:
+            None
 
         Examples:
-            >>> orchestrator = Orchestrator(prompt_manager, planning_manager, tool_executor, conversation_manager, synthesis_generator)
+            >>> orchestrator = Orchestrator(prompt_manager, planning_manager, tool_executor, conversation_manager, synthesis_generator, query_rewriter)
             >>> orchestrator.clear_reasoning_history()
-            None
+            >>> len(orchestrator.get_reasoning_history())
+            0
+        
+        Raises:
+            無特定錯誤
         """
         self.conversation_manager.clear_reasoning_history()
 
@@ -151,11 +178,19 @@ class Orchestrator:
         支援多輪對話歷史的串流查詢入口。
 
         Args:
-            complex_question: str, 複雜查詢。
-            history: Optional[List[Dict[str, str]]], 對話歷史。
+            complex_question (str): 複雜查詢
+            history (Optional[List[Dict[str, str]]]): 對話歷史，預設為 None
 
         Yields:
-            串流回應內容。
+            str: 串流回應內容片段
+        
+        Examples:
+            >>> orchestrator = Orchestrator(prompt_manager, planning_manager, tool_executor, conversation_manager, synthesis_generator, query_rewriter)
+            >>> for chunk in orchestrator.aquery_with_history_stream("今天天氣如何？"):
+            ...     print(chunk, end='')
+        
+        Raises:
+            ValueError: 當 complex_question 不是字串類型時
         """
         if not isinstance(complex_question, str):
             raise ValueError("complex_question must be a string")
