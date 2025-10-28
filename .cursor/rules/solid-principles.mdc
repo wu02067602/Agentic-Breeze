@@ -1,0 +1,86 @@
+---
+alwaysApply: true
+---
+# SOLID 設計原則
+
+## 核心原則
+
+程式碼設計必須遵循 SOLID 原則，但**禁止過度設計**。
+
+### S - 單一職責原則 (Single Responsibility Principle)
+- 每個類別或函數應該只有一個改變的理由
+- 一個類別只做一件事，並把它做好
+- **避免**：為了「可能的未來需求」而拆分過細
+
+### O - 開放封閉原則 (Open-Closed Principle)
+- 對擴展開放，對修改封閉
+- 使用抽象和介面來實現擴展性
+- **避免**：過早的抽象化，等到有實際需求時再抽象
+
+### L - 里氏替換原則 (Liskov Substitution Principle)
+- 子類別必須能夠替換其父類別
+- 繼承關係必須符合「is-a」關係
+- **避免**：為了重用程式碼而建立不合理的繼承關係
+
+### I - 介面隔離原則 (Interface Segregation Principle)
+- 客戶端不應該依賴它不需要的介面
+- 使用多個專門的介面，而不是單一的總介面
+- **避免**：創建過多細碎的介面
+
+### D - 依賴反轉原則 (Dependency Inversion Principle)
+- 高層模組不應該依賴低層模組，兩者都應該依賴抽象
+- 抽象不應該依賴細節，細節應該依賴抽象
+- **避免**：為簡單的功能引入不必要的抽象層
+
+## 實踐指南
+
+### ✅ 良好的設計
+```python
+# 符合單一職責原則
+class OrderValidator:
+    """只負責訂單驗證"""
+    def validate(self, order: Order) -> bool:
+        return self._check_quantity(order) and self._check_price(order)
+
+class OrderProcessor:
+    """只負責處理訂單"""
+    def __init__(self, validator: OrderValidator):
+        self.validator = validator
+    
+    def process(self, order: Order) -> None:
+        if self.validator.validate(order):
+            self._save_order(order)
+```
+
+### ❌ 過度設計
+```python
+# 過度抽象 - 為簡單功能創建過多層級
+class AbstractOrderValidatorFactoryInterface(ABC):
+    @abstractmethod
+    def create_validator(self) -> IOrderValidator:
+        pass
+
+# 對於簡單需求來說太複雜了
+```
+
+## 判斷原則
+
+### 何時應用 SOLID
+- 系統有明確的擴展需求
+- 程式碼會被多處重用
+- 業務邏輯複雜且可能變化
+- 團隊協作需要清晰的職責劃分
+
+### 何時避免過度設計
+- 功能簡單且不太可能變化
+- 只有一個使用場景
+- 過早優化會增加不必要的複雜度
+- **遵循 YAGNI 原則**：You Aren't Gonna Need It（你不會需要它）
+
+## 重要提醒
+
+> **平衡是關鍵**：好的設計是在可維護性和簡潔性之間找到平衡。
+> 
+> **三次法則**：當相同的程式碼出現三次時，才考慮抽象化。
+> 
+> **先讓它工作，再讓它正確，最後讓它快速**：不要一開始就追求完美的架構。

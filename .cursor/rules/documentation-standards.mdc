@@ -1,0 +1,65 @@
+---
+alwaysApply: true
+---
+# 文件規範
+
+## 允許的 Markdown 文件
+
+專案中**僅允許**以下 Markdown 文件：
+
+1. `README.md` - 專案說明文件
+2. `類別圖.md` - 系統類別圖文件
+3. `序列圖.md` - 系統序列圖文件
+4. `元件圖.md` - 系統元件圖文件
+
+**禁止創建其他任何 `.md` 文件**
+
+## 圖表規範
+
+所有文件中的圖表、圖片必須使用 **Mermaid** 的 Markdown 格式來繪製。
+
+### Mermaid 使用範例
+
+#### 類別圖範例
+```mermaid
+classDiagram
+    class TradingStrategy {
+        +String name
+        +execute()
+        +backtest()
+    }
+    class Portfolio {
+        +List positions
+        +calculate_value()
+    }
+    TradingStrategy --> Portfolio
+```
+
+#### 序列圖範例
+```mermaid
+sequenceDiagram
+    participant User
+    participant System
+    participant Database
+    User->>System: 發送交易請求
+    System->>Database: 查詢資料
+    Database-->>System: 返回結果
+    System-->>User: 顯示結果
+```
+
+#### 元件圖範例
+```mermaid
+graph TD
+    A[前端介面] --> B[API 層]
+    B --> C[業務邏輯層]
+    C --> D[資料存取層]
+    D --> E[資料庫]
+```
+
+## 違規處理
+
+如果發現：
+- 創建了不在允許清單內的 `.md` 文件
+- 文件中使用了非 Mermaid 格式圖片
+
+應立即通知使用者並拒絕執行該操作。

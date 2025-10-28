@@ -1,0 +1,126 @@
+---
+alwaysApply: true
+---
+
+# Python Coding Style
+
+## Docstring 規範
+
+所有的 Python 函數都必須包含完整的 docstring，並遵循以下規範：
+
+### 必要元素
+
+1. **函數說明**：簡潔描述函數的功能
+2. **參數 (Args)**：列出所有參數、類型及說明
+3. **返回值 (Returns)**：說明返回值的類型及內容
+4. **使用範例 (Examples)**：提供實際使用範例
+5. **可能的錯誤 (Raises)**：明確列出可能拋出的具體錯誤及其觸發條件
+
+### Docstring 格式範例
+
+```python
+def calculate_moving_average(prices: list[float], window: int) -> list[float]:
+    """
+    計算移動平均值。
+    
+    Args:
+        prices (list[float]): 價格數據列表
+        window (int): 移動平均窗口大小，必須為正整數
+    
+    Returns:
+        list[float]: 移動平均值列表，長度為 len(prices) - window + 1
+    
+    Examples:
+        >>> prices = [10.0, 11.0, 12.0, 13.0, 14.0]
+        >>> calculate_moving_average(prices, 3)
+        [11.0, 12.0, 13.0]
+    
+    Raises:
+        ValueError: 當 window 小於等於 0 時
+        ValueError: 當 window 大於 prices 長度時
+        TypeError: 當 prices 包含非數值類型時
+    """
+    if window <= 0:
+        raise ValueError(f"Window size must be positive, got {window}")
+    if window > len(prices):
+        raise ValueError(f"Window size ({window}) cannot exceed prices length ({len(prices)})")
+    
+    # 函數實作...
+```
+
+## 錯誤處理規範
+
+### ❌ 禁止使用籠統的錯誤捕捉
+
+不可以使用以下方式：
+
+```python
+# 錯誤示範
+try:
+    result = risky_operation()
+except:  # 捕捉所有錯誤
+    pass
+
+# 錯誤示範
+try:
+    result = risky_operation()
+except Exception:  # 過於籠統
+    pass
+```
+
+### ✅ 必須使用具體的錯誤類型
+
+應該明確指定要捕捉的錯誤類型：
+
+```python
+# 正確示範
+try:
+    result = parse_price(data)
+except ValueError as e:
+    logger.error(f"Failed to parse price: {e}")
+    raise
+except KeyError as e:
+    logger.error(f"Missing required field: {e}")
+    raise
+```
+
+### 錯誤捕捉原則
+
+1. 只捕捉預期會發生的具體錯誤類型
+2. 每個錯誤類型都要有明確的處理邏輯
+3. 必要時記錄錯誤訊息
+4. 避免吞掉錯誤（silent failure）
+
+## Git Commit 訊息規範
+
+所有的 commit 訊息必須使用**繁體中文**撰寫，並遵循以下格式：
+
+### 格式規範
+
+```
+(這裡撰寫變更描述)
+
+- (這裡撰寫變更細項)
+- (這裡撰寫變更細項)
+- (這裡撰寫變更細項)
+...
+```
+
+### 範例
+
+```
+新增移動平均線計算功能
+
+- 實作 calculate_moving_average 函數
+- 加入參數驗證與錯誤處理
+- 撰寫完整的 docstring 與使用範例
+- 新增單元測試涵蓋正常與異常情況
+```
+
+### 規範要點
+
+1. **第一行**：簡潔明確地描述此次變更的主要內容
+2. **空一行**：第一行後必須空一行
+3. **變更細項**：使用 `-` 符號列出具體的變更項目
+4. **語言**：必須使用繁體中文
+5. **描述明確**：避免模糊不清的描述，要具體說明做了什麼
