@@ -13,6 +13,32 @@ class Orchestrator:
     總指揮代理。
     
     這個類別負責初始化所有核心組件，並將外部請求委託給適當的管理器處理。
+    負責協調問句重寫、規劃、工具執行和結果綜合等完整流程。
+    
+    Args:
+        prompt_manager (PromptManager): 提示管理器
+        planning_manager (PlanningManager): 規劃管理器
+        tool_executor (ToolExecutor): 工具執行器
+        conversation_manager (ConversationManager): 對話管理器
+        synthesis_generator (SynthesisGenerator): 綜合生成器
+        query_rewriter (QueryRewriter): 問句重寫器
+    
+    Returns:
+        Orchestrator: Orchestrator 實例
+    
+    Examples:
+        >>> orchestrator = Orchestrator(
+        ...     prompt_manager=prompt_manager,
+        ...     planning_manager=planning_manager,
+        ...     tool_executor=tool_executor,
+        ...     conversation_manager=conversation_manager,
+        ...     synthesis_generator=synthesis_generator,
+        ...     query_rewriter=query_rewriter
+        ... )
+        >>> answer = orchestrator.aquery("今天天氣如何？")
+    
+    Raises:
+        TypeError: 當任何參數類型不正確時
     """
     
     def __init__(self, 
@@ -27,12 +53,28 @@ class Orchestrator:
         初始化總指揮代理。
         
         Args:
-            prompt_manager: 提示管理器。
-            planning_manager: 規劃管理器。
-            tool_executor: 工具執行器。
-            conversation_manager: 對話管理器。
-            synthesis_generator: 綜合生成器。
-            query_rewriter: 問句重寫器。
+            prompt_manager (PromptManager): 提示管理器，用於管理各種提示詞
+            planning_manager (PlanningManager): 規劃管理器，用於制定執行計畫
+            tool_executor (ToolExecutor): 工具執行器，用於執行工具調用
+            conversation_manager (ConversationManager): 對話管理器，用於管理對話歷史與元對話
+            synthesis_generator (SynthesisGenerator): 綜合生成器，用於整合工具結果
+            query_rewriter (QueryRewriter): 問句重寫器，用於重寫使用者問句
+        
+        Returns:
+            None
+        
+        Examples:
+            >>> orchestrator = Orchestrator(
+            ...     prompt_manager=prompt_manager,
+            ...     planning_manager=planning_manager,
+            ...     tool_executor=tool_executor,
+            ...     conversation_manager=conversation_manager,
+            ...     synthesis_generator=synthesis_generator,
+            ...     query_rewriter=query_rewriter
+            ... )
+        
+        Raises:
+            TypeError: 當任何參數類型不正確時
         """
         # 初始化各個核心組件
         self.prompt_manager = prompt_manager # 提示管理器
@@ -45,21 +87,27 @@ class Orchestrator:
     def aquery(self, complex_question: str) -> str:
         """
         處理複雜查詢，執行完整的推理循環。
+        
+        本方法會執行完整的查詢流程：問句重寫 → 規劃 → 工具執行 → 結果綜合。
 
         Args:
-            complex_question: 複雜查詢。
+            complex_question (str): 使用者的複雜查詢問句
 
         Returns:
-            回答。
+            str: 綜合後的最終回答
 
         Examples:
-            >>> orchestrator = Orchestrator(prompt_manager, planning_manager, tool_executor, conversation_manager, synthesis_generator)
-            >>> orchestrator.aquery("今天天氣如何？")
+            >>> orchestrator = Orchestrator(
+            ...     prompt_manager, planning_manager, tool_executor,
+            ...     conversation_manager, synthesis_generator, query_rewriter
+            ... )
+            >>> answer = orchestrator.aquery("今天天氣如何？")
+            >>> print(answer)
             "今天天氣晴朗，氣溫攝氏25度。"
 
-        Exceptions:
-            ValueError: 複雜查詢為空。
-            RuntimeError: 推理過程出現錯誤。
+        Raises:
+            ValueError: 當 complex_question 不是字串時
+            RuntimeError: 當推理過程出現錯誤時
         """
         if not isinstance(complex_question, str):
             raise ValueError("complex_question must be a string")
@@ -82,22 +130,33 @@ class Orchestrator:
                             ) -> str:
         """
         支援多輪對話歷史的查詢入口。
+        
+        本方法會先清理對話歷史，判斷是否為元對話，若不是則執行完整的
+        任務流程：問句重寫 → 規劃 → 工具執行 → 結果綜合。
 
         Args:
-            complex_question: str, 複雜查詢。
-            history: Optional[List[Dict[str, str]]], 對話歷史。
+            complex_question (str): 使用者的複雜查詢問句
+            history (Optional[List[Dict[str, str]]]): 對話歷史記錄，每則訊息包含 role 和 content
 
         Returns:
-            回答。
+            str: 綜合後的最終回答
 
         Examples:
-            >>> orchestrator = Orchestrator(prompt_manager, planning_manager, tool_executor, conversation_manager, synthesis_generator)
-            >>> orchestrator.aquery_with_history("今天適合出門嗎？", [{"role": "user", "content": "今天天氣如何？"}, {"role": "assistant", "content": "今天天氣晴朗，氣溫攝氏25度。"}])
-            "今天適合出門，氣溫攝氏25度。"
+            >>> orchestrator = Orchestrator(
+            ...     prompt_manager, planning_manager, tool_executor,
+            ...     conversation_manager, synthesis_generator, query_rewriter
+            ... )
+            >>> history = [
+            ...     {"role": "user", "content": "今天天氣如何？"},
+            ...     {"role": "assistant", "content": "今天天氣晴朗，氣溫攝氏25度。"}
+            ... ]
+            >>> answer = orchestrator.aquery_with_history("今天適合出門嗎？", history)
+            >>> print(answer)
+            "根據當前天氣晴朗、氣溫25度的情況，今天很適合出門。"
 
-        Exceptions:
-            ValueError: 複雜查詢為空。
-            RuntimeError: 推理過程出現錯誤。
+        Raises:
+            ValueError: 當 complex_question 不是字串時
+            RuntimeError: 當推理過程出現錯誤時
         """
         if not isinstance(complex_question, str):
             raise ValueError("complex_question must be a string")
@@ -119,28 +178,43 @@ class Orchestrator:
         synthesis = self.synthesis_generator.synthesize_result(complex_question, results, used_tools)
         return synthesis
     
-    def get_reasoning_history(self):
+    def get_reasoning_history(self) -> List[Dict[str, str]]:
         """
         獲取完整的推理歷史記錄。
 
         Returns:
-            推理歷史記錄。
+            List[Dict[str, str]]: 推理歷史記錄列表
 
         Examples:
-            >>> orchestrator = Orchestrator(prompt_manager, planning_manager, tool_executor, conversation_manager, synthesis_generator)
-            >>> orchestrator.get_reasoning_history()
-            [ReasoningStep(step_type="planning", result="釐清後問題：今天天氣如何？"), ReasoningStep(step_type="tool_execution", result="今天天氣晴朗，氣溫攝氏25度。")]
+            >>> orchestrator = Orchestrator(
+            ...     prompt_manager, planning_manager, tool_executor,
+            ...     conversation_manager, synthesis_generator, query_rewriter
+            ... )
+            >>> history = orchestrator.get_reasoning_history()
+            >>> print(history)
+            [{"step_type": "planning", "result": "釐清後問題：今天天氣如何？"}]
+        
+        Raises:
+            RuntimeError: 當獲取歷史記錄時發生錯誤
         """
         return self.conversation_manager.get_reasoning_history()
     
     def clear_reasoning_history(self) -> None:
         """
         清空推理歷史記錄。
+        
+        Returns:
+            None
 
         Examples:
-            >>> orchestrator = Orchestrator(prompt_manager, planning_manager, tool_executor, conversation_manager, synthesis_generator)
+            >>> orchestrator = Orchestrator(
+            ...     prompt_manager, planning_manager, tool_executor,
+            ...     conversation_manager, synthesis_generator, query_rewriter
+            ... )
             >>> orchestrator.clear_reasoning_history()
-            None
+        
+        Raises:
+            RuntimeError: 當清空歷史記錄時發生錯誤
         """
         self.conversation_manager.clear_reasoning_history()
 
@@ -149,13 +223,37 @@ class Orchestrator:
                                    history: Optional[List[Dict[str, str]]] = None):
         """
         支援多輪對話歷史的串流查詢入口。
+        
+        本方法會以串流方式返回查詢結果，適合需要即時反饋的場景。
+        會先清理對話歷史，判斷是否為元對話，若不是則執行完整的
+        任務流程並以串流方式返回結果。
 
         Args:
-            complex_question: str, 複雜查詢。
-            history: Optional[List[Dict[str, str]]], 對話歷史。
+            complex_question (str): 使用者的複雜查詢問句
+            history (Optional[List[Dict[str, str]]]): 對話歷史記錄，每則訊息包含 role 和 content
 
-        Yields:
-            串流回應內容。
+        Returns:
+            Generator: 串流生成器，逐步生成回應內容
+
+        Examples:
+            >>> orchestrator = Orchestrator(
+            ...     prompt_manager, planning_manager, tool_executor,
+            ...     conversation_manager, synthesis_generator, query_rewriter
+            ... )
+            >>> history = [
+            ...     {"role": "user", "content": "今天天氣如何？"},
+            ...     {"role": "assistant", "content": "今天天氣晴朗。"}
+            ... ]
+            >>> for chunk in orchestrator.aquery_with_history_stream("明天呢？", history):
+            ...     print(chunk, end="")
+            🔄 正在分析您的問題... 完成
+            🔄 正在制定執行計畫... 完成
+            🔄 正在執行相關工具... 完成
+            明天預計多雲，氣溫23度。
+        
+        Raises:
+            ValueError: 當 complex_question 不是字串時
+            RuntimeError: 當推理過程出現錯誤時
         """
         if not isinstance(complex_question, str):
             raise ValueError("complex_question must be a string")
